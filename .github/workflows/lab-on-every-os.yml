@@ -1,0 +1,93 @@
+# Runs the lab's own commands on Windows, Linux and macOS, from PowerShell, the shell
+# Copilot uses for hooks on Windows. Covers the hook programs, not Copilot itself.
+name: lab on every OS
+
+on:
+  push:
+  workflow_dispatch:
+
+jobs:
+  lab:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - uses: actions/setup-node@v5
+        with:
+          node-version: '22'
+      - name: Warm up
+        run: node scripts/warm-up.mjs
+      - name: Probes, reference policy
+        run: node hook-lab/probes.mjs hook-lab/reference/policy.mjs
+      - name: Probes, starter policy fails 8
+        run: |
+          node hook-lab/probes.mjs | Select-Object -Last 1 | Tee-Object -Variable last
+          if ("$last" -notmatch '0 passed, 8 failed') { exit 1 }
+          exit 0
+      - name: Stop hook on the seeded bug blocks with the assertion
+        run: |
+          $out = '{"stop_hook_active":false}' |
+            node hook-lab/stop.mjs agentStop hook-lab/reference/policy.mjs | Out-String
+          $out
+          if ($out -notmatch '"decision":"block"' -or $out -notmatch '7800') { exit 1 }
+      - name: Guard denies a Windows-style path
+        run: |
+          $event = '{"toolName":"edit","toolArgs":{"path":"C:\\lab\\src\\main\\resources\\generated\\rates.json"}}'
+          $out = $event | node hook-lab/guard.mjs | Out-String
+          $out
+          if ($out -notmatch '"permissionDecision":"deny"') { exit 1 }
+      - name: Session context
+        run: |
+          $out = '{}' | node hook-lab/session-start.mjs | Out-String
+          $out
+          if ($out -notmatch 'tickets/M-103.md') { exit 1 }
+      - name: Traces
+        run: node scripts/traces.mjs
+      # Copilot starts the shell with -NoProfile -NoLogo and writes the event to its stdin.
+      - name: Stop hook started the way Copilot starts it on Windows
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          printf '{"stop_hook_active":false}' > event.json
+          for ps in powershell.exe pwsh.exe; do
+            out=$("$ps" -NoProfile -NoLogo -Command \
+              "node hook-lab/stop.mjs agentStop hook-lab/reference/policy.mjs" < event.json)
+            echo "$ps: $out" | cut -c1-300
+            case "$out" in *'"decision":"block"'*) ;; *) exit 1 ;; esac
+            case "$out" in *7800*) ;; *) exit 1 ;; esac
+          done
+          printf '%s' '{"toolName":"edit","toolArgs":{"path":"src\\main\\resources\\generated\\rates.json"}}' > event.json
+          out=$(powershell.exe -NoProfile -NoLogo -Command "node hook-lab/guard.mjs" < event.json)
+          echo "$out"
+          case "$out" in *'"permissionDecision":"deny"'*) ;; *) exit 1 ;; esac
+      # The PowerShell twins, for Windows machines without Node, on Windows PowerShell 5.1.
+      - name: PowerShell twins, without Node
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          ps="powershell.exe -NoProfile -NoLogo -Command"
+          b="powershell -NoProfile -ExecutionPolicy Bypass -File"
+          out=$($ps "$b hook-lab/probes.ps1 hook-lab/reference/policy.ps1" | tail -1)
+          echo "$out"; case "$out" in *'8 passed, 0 failed'*) ;; *) exit 1 ;; esac
+          out=$($ps "$b hook-lab/probes.ps1" | tail -1)
+          echo "$out"; case "$out" in *'0 passed, 8 failed'*) ;; *) exit 1 ;; esac
+          printf '{"stop_hook_active":false}' > event.json
+          out=$($ps "$b hook-lab/stop.ps1 agentStop hook-lab/reference/policy.ps1" < event.json)
+          echo "$out" | cut -c1-300
+          case "$out" in *'"decision":"block"'*) ;; *) exit 1 ;; esac
+          case "$out" in *7800*) ;; *) exit 1 ;; esac
+          printf '%s' '{"toolName":"edit","toolArgs":{"path":"C:\\lab\\src\\main\\resources\\generated\\rates.json"}}' > event.json
+          out=$($ps "$b hook-lab/guard.ps1" < event.json)
+          echo "$out"
+          case "$out" in *'"permissionDecision":"deny"'*) ;; *) exit 1 ;; esac
+          $ps "$b scripts/generate-rates.ps1 -Check"

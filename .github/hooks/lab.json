@@ -1,0 +1,25 @@
+{
+  "version": 1,
+  "hooks": {
+    "off:agentStop": [
+      {
+        "type": "command",
+        "command": "node hook-lab/stop.mjs agentStop hook-lab/policy.mjs",
+        "timeoutSec": 360
+      }
+    ],
+    "off:sessionStart": [
+      { "type": "command", "command": "node hook-lab/session-start.mjs", "timeoutSec": 20 }
+    ],
+    "off:preToolUse": [
+      { "type": "command", "command": "node hook-lab/guard.mjs", "timeoutSec": 20 }
+    ],
+    "off:subagentStop": [
+      {
+        "type": "command",
+        "command": "node hook-lab/stop.mjs subagentStop hook-lab/policy.mjs",
+        "timeoutSec": 360
+      }
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "generatedFrom": "rates/rates.csv",
+  "regenerate": "node scripts/generate-rates.mjs",
+  "months": [
+    {"month": "JANUARY", "season": "peak", "nightlyPence": 3000},
+    {"month": "FEBRUARY", "season": "peak", "nightlyPence": 3000},
+    {"month": "MARCH", "season": "peak", "nightlyPence": 3000},
+    {"month": "APRIL", "season": "shoulder", "nightlyPence": 2400},
+    {"month": "MAY", "season": "shoulder", "nightlyPence": 2400},
+    {"month": "JUNE", "season": "peak", "nightlyPence": 3000},
+    {"month": "JULY", "season": "peak", "nightlyPence": 3000},
+    {"month": "AUGUST", "season": "peak", "nightlyPence": 3000},
+    {"month": "SEPTEMBER", "season": "peak", "nightlyPence": 3000},
+    {"month": "OCTOBER", "season": "shoulder", "nightlyPence": 2400},
+    {"month": "NOVEMBER", "season": "peak", "nightlyPence": 3000},
+    {"month": "DECEMBER", "season": "peak", "nightlyPence": 3000}
+  ]
+}

@@ -1,0 +1,33 @@
+{
+  "version": 1,
+  "hooks": {
+    "off:agentStop": [
+      {
+        "type": "command",
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File hook-lab/stop.ps1 agentStop hook-lab/policy.ps1",
+        "timeoutSec": 360
+      }
+    ],
+    "off:sessionStart": [
+      {
+        "type": "command",
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File hook-lab/session-start.ps1",
+        "timeoutSec": 20
+      }
+    ],
+    "off:preToolUse": [
+      {
+        "type": "command",
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File hook-lab/guard.ps1",
+        "timeoutSec": 20
+      }
+    ],
+    "off:subagentStop": [
+      {
+        "type": "command",
+        "command": "powershell -NoProfile -ExecutionPolicy Bypass -File hook-lab/stop.ps1 subagentStop hook-lab/policy.ps1",
+        "timeoutSec": 360
+      }
+    ]
+  }
+}

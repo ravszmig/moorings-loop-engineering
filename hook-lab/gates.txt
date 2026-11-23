@@ -1,0 +1,17 @@
+# Gates the stop hooks run before the agent may finish. One per line.
+# A line starting with # is switched off. Remove the # to switch a gate on.
+
+# javac with -Xlint:all -Werror
+compile
+# the default unit test suite (acceptance tests are excluded from it)
+suite
+
+# M-101
+acceptance ShoulderSeasonAcceptanceTest
+
+# M-102
+# acceptance RoomOverlapAcceptanceTest
+# mutation com.example.stays.booking.RoomCalendar
+
+# M-103
+# generated
